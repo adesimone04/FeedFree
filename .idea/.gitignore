@@ -1,3 +1,17 @@
-# Default ignored files
-/shelf/
+# File di configurazione personali dell'utente (finestre aperte, posizioni del cursore, ecc.)
 /workspace.xml
+/tasks.xml
+
+# Modifiche accantonate (Shelf)
+/shelf/
+
+# File specifici del dispositivo o dei target di deployment locali
+/deploymentTargetSelector.xml
+/deviceManager.xml
+
+# Cache locali dell'IDE
+/caches/
+/dictionaries/
+
+# Impostazioni di layout e wizard locali
+/assetWizardSettings.xml

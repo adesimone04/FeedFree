@@ -1,1 +1,22 @@
+# Cache e file di build globali di Gradle
+.gradle/
+/build/
+
+# File di configurazione locale (NON versionare mai questo file, contiene il path locale del tuo Android SDK)
 local.properties
+
+# File generati da C/C++ (se usi NDK)
+.cxx/
+
+# File di Keystore (Sicurezza: non caricare mai le chiavi di firma pubbliche/private)
+*.jks
+*.keystore
+*.properties.local
+
+# File di sistema macOS/Windows
+.DS_Store
+Thumbs.db
+
+# Altri IDE o file generici
+.vscode/
+*.iml

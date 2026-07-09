@@ -1,1 +1,2 @@
-/build
+# Ignora la directory di build specifica del modulo
+/build/

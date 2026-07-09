@@ -1,23 +1,42 @@
 package com.example.feedfree.data
 
+import com.example.feedfree.models.Badges
 import com.example.feedfree.models.User
 import kotlinx.coroutines.delay
 
 object MockRepository {
 
-    // Simula una chiamata di rete con 'suspend' e un leggero ritardo
     suspend fun getCurrentUser(): User {
-        delay(800) // Simula 800ms di caricamento
+        delay(800)
+
+        val mockBadges = listOf(
+            Badges(
+                id = 1,
+                name = "Pioniere",
+                badgesUrl = "https://ui-avatars.com/api/?name=P&background=FFD700&color=fff&rounded=true"
+            ),
+            Badges(
+                id = 2,
+                name = "Top 10",
+                badgesUrl = "https://ui-avatars.com/api/?name=10&background=C0C0C0&color=fff&rounded=true"
+            ),
+            Badges(
+                id = 3,
+                name = "Scrittore",
+                badgesUrl = "https://ui-avatars.com/api/?name=S&background=0D8ABC&color=fff&rounded=true"
+            )
+        )
+
         return User(
             id = "usr_001",
             name = "Mario Rossi",
             username = "@marior",
             points = 2000,
-            avatarUrl = "https://ui-avatars.com/api/?name=Mario+Rossi"
+            avatarUrl = "https://ui-avatars.com/api/?name=Mario+Rossi",
+            badges = mockBadges
         )
     }
 
-    // Aggiunta utile per mockare classifiche o feed
     suspend fun getLeaderboard(): List<User> {
         delay(1000)
         return listOf(

@@ -1,10 +1,11 @@
 package com.example.feedfree.models
 
 data class User(
-    val id: String, // Identificatore univoco essenziale
+    val id: String,
     val name: String,
     val username: String,
     val points: Int,
-    val badges: List<Badge>,
-    val avatarUrl: String? = null // Opzionale, utile per la UI
+    val level: Int = 1,
+    val avatarUrl: String? = null,
+    val badges: List<Badges> = emptyList()
 )

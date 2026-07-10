@@ -12,22 +12,36 @@ object MockRepository {
             Badges(
                 id = 1,
                 name = "Pioniere",
-                badgesUrl = "https://ui-avatars.com/api/?name=P&background=FFD700&color=fff"
+                type = Tier.BRONZE, // Corretto: il nome del parametro è 'type'
+                badgesUrl = "https://ui-avatars.com/api/?name=P&background=CD7F32&color=fff"
             ),
             Badges(
                 id = 2,
                 name = "Top 10",
+                type = Tier.SILVER, // Aggiunto il tipo mancante
                 badgesUrl = "https://ui-avatars.com/api/?name=10&background=C0C0C0&color=fff"
+            ),
+            Badges(
+                id = 3,
+                name = "Scrittore",
+                type = Tier.GOLD,
+                badgesUrl = "https://ui-avatars.com/api/?name=S&background=FFD700&color=fff"
+            ),
+            Badges(
+                id = 4,
+                name = "Completista",
+                type = Tier.PLATINUM,
+                badgesUrl = "https://ui-avatars.com/api/?name=C&background=E5E4E2&color=fff"
             )
         )
 
         return User(
             id = "usr_001",
-            name = "Mario Rossi",
-            username = "@marior",
+            name = "A. Cimmino",
+            username = "@acimmino",
             points = 2000,
             level = 15,
-            avatarUrl = "https://ui-avatars.com/api/?name=Mario+Rossi",
+            avatarUrl = "https://ui-avatars.com/api/?name=A.+Cimmino",
             badges = mockBadges
         )
     }
@@ -44,7 +58,6 @@ object MockRepository {
 
     suspend fun getDailyScreenTime(): DailyScreenTime {
         delay(500)
-        // 255 minuti = 4h 15m; 480 minuti = 8h
         return DailyScreenTime(totalSpentMinutes = 255, dailyGoalMinutes = 480)
     }
 
@@ -55,7 +68,7 @@ object MockRepository {
                 id = "app_1",
                 name = "Instagram",
                 state = AppState.MONITORED,
-                timeSpentMinutes = 90 // 1h e 30m
+                timeSpentMinutes = 90
             ),
             AppItem(
                 id = "app_2",
@@ -68,7 +81,7 @@ object MockRepository {
                 name = "LinkedIn",
                 state = AppState.TIMER,
                 timeSpentMinutes = 15,
-                timerLimitMinutes = 30 // 15m / 30m
+                timerLimitMinutes = 30
             ),
             AppItem(
                 id = "app_4",
@@ -79,7 +92,7 @@ object MockRepository {
                 id = "app_5",
                 name = "Microsoft Teams",
                 state = AppState.DEFAULT,
-                timeSpentMinutes = 130 // 2h 10m
+                timeSpentMinutes = 130
             )
         )
     }

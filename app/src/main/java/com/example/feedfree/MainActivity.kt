@@ -2,6 +2,9 @@ package com.example.feedfree
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
@@ -44,6 +47,12 @@ fun FeedFreeApp() {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
     val profileViewModel: ProfileViewModel = viewModel()
 
+    val customItemColors = NavigationSuiteDefaults.itemColors(
+        navigationBarItemColors = NavigationBarItemDefaults.colors(
+            indicatorColor = Color(0xFF8AB895) // Il tuo verde personalizzato
+        )
+    )
+
     NavigationSuiteScaffold(
         navigationSuiteItems = {
             AppDestinations.entries.forEach {
@@ -56,7 +65,8 @@ fun FeedFreeApp() {
                     },
                     label = { Text(it.label) },
                     selected = it == currentDestination,
-                    onClick = { currentDestination = it }
+                    onClick = { currentDestination = it },
+                    colors = customItemColors
                 )
             }
         }
@@ -70,10 +80,17 @@ fun FeedFreeApp() {
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
-                AppDestinations.FAVORITES -> {
+                AppDestinations.BADGE -> {
                     // Schermata temporanea per i Preferiti
                     Greeting(
-                        name = "Favorites Screen",
+                        name = "Badge Screen",
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+                AppDestinations.STATISTICHE -> {
+                    // Schermata temporanea per i Preferiti
+                    Greeting(
+                        name = "Stats Screen",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -95,9 +112,10 @@ enum class AppDestinations(
     val label: String,
     val icon: Int,
 ) {
-    HOME("Home", R.drawable.ic_home),
-    FAVORITES("Favorites", R.drawable.ic_favorite),
-    PROFILE("Profile", R.drawable.ic_account_box),
+    HOME("Home", R.drawable.baseline_home_24),
+    BADGE("Badges", R.drawable.baseline_workspace_premium_24),
+    STATISTICHE("Statistiche", R.drawable.outline_bar_chart_24),
+    PROFILE("Profilo", R.drawable.baseline_account_circle_24),
 }
 
 @Composable

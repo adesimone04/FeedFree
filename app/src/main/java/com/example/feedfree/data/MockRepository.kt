@@ -42,7 +42,12 @@ object MockRepository {
             points = 2000,
             level = 15,
             avatarUrl = "https://ui-avatars.com/api/?name=A.+Cimmino",
-            badges = mockBadges
+            badges = mockBadges,
+            friends = listOf(
+                User("usr_002", "Antonio", "@antonio", 3500, 25, null, emptyList(), null),
+                User("usr_003", "Giulia Neri", "@giulian", 2100, 18, null, emptyList(), null),
+                User("usr_004", "Yugi Tronchese", "@yugi", 1000, 8, null, emptyList(), null)
+            )
         )
     }
 
@@ -50,9 +55,9 @@ object MockRepository {
         delay(1000)
         return listOf(
             getCurrentUser(),
-            User("usr_002", "Antonio", "@antonio", 3500, 25),
-            User("usr_003", "Giulia Neri", "@giulian", 2100, 18),
-            User("usr_004", "Yugi Tronchese", "@yugi", 1000, 8)
+            User("usr_002", "Antonio", "@antonio", 3500, 25,null, emptyList(), null),
+            User("usr_003", "Giulia Neri", "@giulian", 2100, 18, null, emptyList(), null),
+            User("usr_004", "Yugi Tronchese", "@yugi", 1000, 8, null, emptyList(), null)
         ).sortedByDescending { it.points }
     }
 

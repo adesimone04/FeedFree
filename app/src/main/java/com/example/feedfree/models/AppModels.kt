@@ -1,5 +1,7 @@
 package com.example.feedfree.models
 
+import android.R
+
 // Enum per lo stato delle applicazioni (Monitorata, Con Timer, Bloccata)
 enum class AppState { MONITORED, TIMER, BLOCKED, DEFAULT }
 

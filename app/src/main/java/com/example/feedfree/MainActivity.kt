@@ -27,6 +27,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.feedfree.ui.profile.ProfileScreen
 import com.example.feedfree.ui.profile.ProfileViewModel
+import com.example.feedfree.ui.stats.StatsScreen
+import com.example.feedfree.ui.stats.StatsViewModel
 import com.example.feedfree.ui.theme.FeedFreeTheme
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +48,7 @@ class MainActivity : ComponentActivity() {
 fun FeedFreeApp() {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
     val profileViewModel: ProfileViewModel = viewModel()
+    val statsViewModel: StatsViewModel = viewModel()
 
     val customItemColors = NavigationSuiteDefaults.itemColors(
         navigationBarItemColors = NavigationBarItemDefaults.colors(
@@ -88,17 +91,13 @@ fun FeedFreeApp() {
                     )
                 }
                 AppDestinations.STATISTICHE -> {
-                    // Schermata temporanea per i Preferiti
-                    Greeting(
-                        name = "Stats Screen",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        StatsScreen(viewModel = statsViewModel)
+                    }
                 }
                 AppDestinations.PROFILE -> {
-                    // 3. ECCO LA TUA PAGINA!
-                    // Wrappiamo la schermata in un Box e gli passiamo 'innerPadding'.
-                    // Questo è fondamentale affinché la tua ProfileScreen non finisca
-                    // graficamente "sotto" la barra di navigazione in basso.
+
                     Box(modifier = Modifier.padding(innerPadding)) {
                         ProfileScreen(viewModel = profileViewModel)
                     }

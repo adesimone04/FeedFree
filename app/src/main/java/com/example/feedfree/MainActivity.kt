@@ -22,9 +22,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import com.example.feedfree.ui.badge.BadgesOverview
+import com.example.feedfree.ui.badge.BadgesMainScreen
 import com.example.feedfree.ui.profile.ProfileScreen
 import com.example.feedfree.ui.profile.ProfileViewModel
 import com.example.feedfree.ui.stats.StatsScreen
@@ -47,8 +48,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun FeedFreeApp() {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
-    val profileViewModel: ProfileViewModel = viewModel()
-    val statsViewModel: StatsViewModel = viewModel()
 
     val customItemColors = NavigationSuiteDefaults.itemColors(
         navigationBarItemColors = NavigationBarItemDefaults.colors(
@@ -84,20 +83,23 @@ fun FeedFreeApp() {
                     )
                 }
                 AppDestinations.BADGE -> {
-                    // Schermata temporanea per i Preferiti
-                    Greeting(
-                        name = "Badge Screen",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    val profileViewModel: ProfileViewModel = viewModel()
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        // Da così: BadgesPage(...)
+                        // A così:
+                        BadgesMainScreen(viewModel = profileViewModel)
+                    }
                 }
                 AppDestinations.STATISTICHE -> {
-
+                    // ViewModel inizializzato solo quando serve
+                    val statsViewModel: StatsViewModel = viewModel()
                     Box(modifier = Modifier.padding(innerPadding)) {
                         StatsScreen(viewModel = statsViewModel)
                     }
                 }
                 AppDestinations.PROFILE -> {
-
+                    // ViewModel inizializzato solo quando serve
+                    val profileViewModel: ProfileViewModel = viewModel()
                     Box(modifier = Modifier.padding(innerPadding)) {
                         ProfileScreen(viewModel = profileViewModel)
                     }

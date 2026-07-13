@@ -8,32 +8,13 @@ object MockRepository {
     suspend fun getCurrentUser(): User {
         delay(800)
 
-        val mockBadges = listOf(
-            Badges(
-                id = 1,
-                name = "Pioniere",
-                type = Tier.BRONZE, // Corretto: il nome del parametro è 'type'
-                badgesUrl = "https://ui-avatars.com/api/?name=P&background=CD7F32&color=fff"
-            ),
-            Badges(
-                id = 2,
-                name = "Top 10",
-                type = Tier.SILVER, // Aggiunto il tipo mancante
-                badgesUrl = "https://ui-avatars.com/api/?name=10&background=C0C0C0&color=fff"
-            ),
-            Badges(
-                id = 3,
-                name = "Scrittore",
-                type = Tier.GOLD,
-                badgesUrl = "https://ui-avatars.com/api/?name=S&background=FFD700&color=fff"
-            ),
-            Badges(
-                id = 4,
-                name = "Completista",
-                type = Tier.PLATINUM,
-                badgesUrl = "https://ui-avatars.com/api/?name=C&background=E5E4E2&color=fff"
-            )
-        )
+        // Creazione dinamica dei trofei
+        val platBadges = listOf(Badges(1, "Completista Suprema", Tier.PLATINUM, "https://ui-avatars.com/api/?name=P"))
+        val goldBadges = List(5) { Badges(10 + it, "Traguardo Oro ${it + 1}", Tier.GOLD, "https://ui-avatars.com/api/?name=G") }
+        val silverBadges = List(2) { Badges(20 + it, "Traguardo Argento ${it + 1}", Tier.SILVER, "https://ui-avatars.com/api/?name=S") }
+        val bronzeBadges = List(12) { Badges(30 + it, "Traguardo Bronzo ${it + 1}", Tier.BRONZE, "https://ui-avatars.com/api/?name=B") }
+
+        val mockBadges = platBadges + goldBadges + silverBadges + bronzeBadges
 
         return User(
             id = "usr_001",
@@ -44,60 +25,7 @@ object MockRepository {
             avatarUrl = "https://ui-avatars.com/api/?name=A.+Cimmino",
             badges = mockBadges,
             friends = listOf(
-                User("usr_002", "Antonio", "@antonio", 3500, 25, null, emptyList(), null),
-                User("usr_003", "Giulia Neri", "@giulian", 2100, 18, null, emptyList(), null),
-                User("usr_004", "Yugi Tronchese", "@yugi", 1000, 8, null, emptyList(), null)
-            )
-        )
-    }
-
-    suspend fun getLeaderboard(): List<User> {
-        delay(1000)
-        return listOf(
-            getCurrentUser(),
-            User("usr_002", "Antonio", "@antonio", 3500, 25,null, emptyList(), null),
-            User("usr_003", "Giulia Neri", "@giulian", 2100, 18, null, emptyList(), null),
-            User("usr_004", "Yugi Tronchese", "@yugi", 1000, 8, null, emptyList(), null)
-        ).sortedByDescending { it.points }
-    }
-
-    suspend fun getDailyScreenTime(): DailyScreenTime {
-        delay(500)
-        return DailyScreenTime(totalSpentMinutes = 255, dailyGoalMinutes = 480)
-    }
-
-    suspend fun getAppList(): List<AppItem> {
-        delay(600)
-        return listOf(
-            AppItem(
-                id = "app_1",
-                name = "Instagram",
-                state = AppState.MONITORED,
-                timeSpentMinutes = 90
-            ),
-            AppItem(
-                id = "app_2",
-                name = "Youtube",
-                state = AppState.MONITORED,
-                timeSpentMinutes = 20
-            ),
-            AppItem(
-                id = "app_3",
-                name = "LinkedIn",
-                state = AppState.TIMER,
-                timeSpentMinutes = 15,
-                timerLimitMinutes = 30
-            ),
-            AppItem(
-                id = "app_4",
-                name = "TikTok",
-                state = AppState.BLOCKED
-            ),
-            AppItem(
-                id = "app_5",
-                name = "Microsoft Teams",
-                state = AppState.DEFAULT,
-                timeSpentMinutes = 130
+                User("usr_002", "Antonio", "@antonio", 3500, 25, null, emptyList(), null)
             )
         )
     }
@@ -105,26 +33,76 @@ object MockRepository {
     suspend fun getCustomActivities(): List<CustomActivity> {
         delay(700)
         return listOf(
+            // ATTIVITÀ PENDING (In corso)
             CustomActivity(
                 id = "act_1",
                 name = "Leggere Harry Potter 1",
                 description = "Relax serale",
-                isCompleted = true,
-                goals = listOf(Goal("g1", "Leggi 20 pagine di un libro", true))
+                isCompleted = false,
+                goals = listOf(
+                    Goal("g1", "Leggi capitolo 1", true),
+                    Goal("g2", "Leggi capitolo 2", false),
+                    Goal("g3", "Leggi capitolo 3", false)
+                ),
+                tier = Tier.SILVER
             ),
             CustomActivity(
                 id = "act_2",
                 name = "Studiare ETC slide 12",
                 description = "Preparazione esame",
-                isCompleted = true,
-                goals = emptyList()
+                isCompleted = false,
+                goals = listOf(
+                    Goal("g4", "Finire slide 5", true),
+                    Goal("g5", "Finire slide 10", true),
+                    Goal("g6", "Ripasso generale", false)
+                ),
+                tier = Tier.GOLD
             ),
             CustomActivity(
                 id = "act_3",
-                name = "Finire progetto IUM",
-                description = "Sviluppo prototipo Figma",
+                name = "Iniziare progetto IUM",
+                description = "Sviluppo UI",
+                isCompleted = false,
+                goals = listOf(
+                    Goal("g7", "Creare Wireframe", false),
+                    Goal("g8", "Disegnare UI", false)
+                ),
+                tier = Tier.PLATINUM
+            ),
+
+            // ATTIVITÀ COMPLETATE (Da bacheca)
+            CustomActivity(
+                id = "act_4",
+                name = "Attività offline",
+                description = "Disconnessione totale",
                 isCompleted = true,
-                goals = listOf(Goal("g2", "Ottieni tutti i Badges", false))
+                goals = listOf(
+                    Goal("g9", "Spegni il telefono per 2 ore", true)
+                ),
+                tier = Tier.BRONZE
+            ),
+            CustomActivity(
+                id = "act_5",
+                name = "Corso primo soccorso",
+                description = "Formazione personale",
+                isCompleted = true,
+                goals = listOf(
+                    Goal("g10", "Teoria", true),
+                    Goal("g11", "Pratica", true),
+                    Goal("g12", "Test finale", true)
+                ),
+                tier = Tier.GOLD
+            ),
+            CustomActivity(
+                id = "act_6",
+                name = "Workshop Figma",
+                description = "Design system",
+                isCompleted = true,
+                goals = listOf(
+                    Goal("g13", "Creare componenti", true),
+                    Goal("g14", "Collegare prototipo", true)
+                ),
+                tier = Tier.PLATINUM
             )
         )
     }

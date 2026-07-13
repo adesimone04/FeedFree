@@ -20,15 +20,16 @@ data class DailyScreenTime(
 
 data class Goal(
     val id: String,
-    val name: String,                 // Es: "Leggi 20 pagine di un libro"
+    val name: String,
     val isCompleted: Boolean
 )
 
 data class CustomActivity(
     val id: String,
-    val name: String,                 // Es: "Leggere Harry Potter 1"
+    val name: String,
     val description: String?,
-    val iconId: Int? = null,          // Riferimento a una risorsa drawable
+    val iconId: Int? = null,
     val isCompleted: Boolean,
-    val goals: List<Goal> = emptyList()
+    val goals: List<Goal> = emptyList(),
+    val tier: Tier = Tier.BRONZE
 )

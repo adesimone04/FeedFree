@@ -18,14 +18,16 @@ object MockRepository {
 
         return User(
             id = "usr_001",
-            name = "A. Cimmino",
-            username = "@acimmino",
+            name = "Mario Rossi",
+            username = "OiramR",
             points = 2000,
             level = 15,
             avatarUrl = "https://ui-avatars.com/api/?name=A.+Cimmino",
             badges = mockBadges,
             friends = listOf(
-                User("usr_002", "Antonio", "@antonio", 3500, 25, null, emptyList(), null)
+                User("usr_002", "Antonio", "@antonio", 3500, 25, null, emptyList(), null),
+                User("usr_003", "Serena", "@aneres", 2000, 15, null, emptyList(), null),
+                User("usr_004", "Matteo", "@mato", 1500, 12, null, emptyList(), null)
             )
         )
     }

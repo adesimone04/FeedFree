@@ -7,5 +7,6 @@ data class User(
     val points: Int,
     val level: Int = 1,
     val avatarUrl: String? = null,
-    val badges: List<Badges> = emptyList()
+    val badges: List<Badges>,
+    val friends: List<User>?
 )

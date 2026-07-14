@@ -1,24 +1,24 @@
 package com.example.feedfree.ui.profile
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.IconButton
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,95 +26,110 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.feedfree.R
+import com.example.feedfree.models.CustomActivity
 import com.example.feedfree.models.Tier
+import com.example.feedfree.models.User
+import com.example.feedfree.ui.badge.getDrawableRes
 
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel) {
-    // Osserviamo i dati dal ViewModel in tempo reale
     val userState by viewModel.uiState.collectAsState()
+    // Sincronizziamo la pagina con lo stato dinamico delle attività globale
+    val allActivities by viewModel.activities.collectAsState()
 
-    // Se i dati non sono ancora arrivati (i famosi 800ms di delay), mostriamo un caricamento
     if (userState == null) {
-        Text("Caricamento in corso...", modifier = Modifier.padding(16.dp))
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Caricamento in corso...", fontSize = 16.sp, color = Color.Gray)
+        }
         return
     }
 
     val user = userState!!
 
-    // Inizio della grafica
+    // Calcolo delle attività realmente completate
+    val completedActivities = allActivities.filter { activity ->
+        if (activity.goals.isNotEmpty()) activity.goals.all { it.isCompleted } else activity.isCompleted
+    }
+
+    // Filtro per i trofei di Platino
+    val platinumActivities = completedActivities.filter { it.tier == Tier.PLATINUM }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
-
     ) {
         ProfileHeader(user = user)
 
-        Level(user = user)
+        LevelBanner(user = user)
+
+        // Passiamo il vero numero di trofei completati
+        UserStatsRow(user = user, totalTrophies = completedActivities.size)
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                // ECCO IL PADDING LATERALE PER GLI ALTRI BLOCCHI:
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             FriendsLeaderboard(user = user)
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Platinums(user = user)
-
-            Spacer(modifier = Modifier.height(32.dp))
-
+            // La card viene mostrata SOLO se ci sono attività Platino completate
+            if (platinumActivities.isNotEmpty()) {
+                Platinums(platinumActivities = platinumActivities)
+                Spacer(modifier = Modifier.height(40.dp))
+            } else {
+                // Spazio extra in basso se la card dei platini è nascosta
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }
 
 @Composable
-fun ProfileHeader(user: com.example.feedfree.models.User) {
-    // Definizione del colore verde e della forma personalizzata
-    val customGreen = Color(0xFF91C09C) // Il tuo colore verde
+fun ProfileHeader(user: User) {
+    val context = LocalContext.current
+    val customGreen = Color(0xFF91C09C)
     val partialPillShape = RoundedCornerShape(
-        topStart = 0.dp,
-        topEnd = 0.dp,
-        bottomStart = 24.dp, // Regola il raggio qui per la curvatura in basso
+        bottomStart = 24.dp,
         bottomEnd = 24.dp
     )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 6.dp,
-                shape = partialPillShape,
-                clip = false
-            )
+            .shadow(elevation = 6.dp, shape = partialPillShape, clip = false)
             .background(color = customGreen, shape = partialPillShape)
-            .padding(25.dp) // Il padding vale per tutto ciò che è dentro il Box
+            .padding(25.dp)
     ) {
-
-        // 2. Tasto Impostazioni (Allineato in alto a destra)
         IconButton(
-            onClick = { /* TODO: Aggiungi navigazione o azione impostazioni */ },
+            onClick = {
+                // Feedback per schermata non ancora implementata
+                Toast.makeText(context, "Impostazioni in arrivo nelle prossime versioni", Toast.LENGTH_SHORT).show()
+            },
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
             Icon(
-                imageVector = Icons.Default.Settings, // Usa l'icona di default di Material
+                imageVector = Icons.Default.Settings,
                 contentDescription = "Impostazioni",
-                tint = Color.Black // Colore dell'icona
+                tint = Color.Black
             )
         }
 
-        // 3. La tua Column originale che centra l'avatar e il testo
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -124,8 +139,10 @@ fun ProfileHeader(user: com.example.feedfree.models.User) {
                 shape = CircleShape,
                 shadowElevation = 8.dp
             ) {
+                val avatarImage = user.avatarResId ?: R.drawable.ic_launcher_foreground
+
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    painter = painterResource(id = avatarImage),
                     contentDescription = "Avatar",
                     contentScale = ContentScale.Crop
                 )
@@ -143,7 +160,7 @@ fun ProfileHeader(user: com.example.feedfree.models.User) {
             Text(
                 text = user.username,
                 fontSize = 16.sp,
-                color = Color.DarkGray // Ho scurito leggermente rispetto a Gray per maggiore leggibilità
+                color = Color(0xFF2E2E2E)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -152,106 +169,135 @@ fun ProfileHeader(user: com.example.feedfree.models.User) {
 }
 
 @Composable
-fun Level(user: com.example.feedfree.models.User){
+fun LevelBanner(user: User) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
         modifier = Modifier
-            // 1. IL SEGRETO DELL'OVERLAP: Sposta la card verso l'alto (regola il valore a piacimento)
             .offset(y = (-24).dp)
-            // 2. Ombra con angoli più ampi (24.dp si avvicina di più al design in foto)
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(24.dp),
-                clip = false
-            )
-            // 3. Sfondo
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false)
             .background(Color(0xFFB7CEB5), shape = RoundedCornerShape(24.dp))
-            // 4. Larghezza e padding
-            .fillMaxWidth(0.9f) // Rende la card larga il 90% dello schermo (come in foto)
-            .padding(horizontal = 24.dp, vertical = 30.dp) // Spazio interno della card
+            .fillMaxWidth(0.9f)
+            .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-
-        // Icona della medaglia (Sostituisci R.drawable.ic_medal con l'ID della tua icona)
         Icon(
-            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+            imageVector = Icons.Filled.Star,
             contentDescription = "Icona Livello",
-            tint = Color.Black,
-            modifier = Modifier.size(24.dp)
+            tint = Color(0xFF2E2E2E),
+            modifier = Modifier.size(32.dp)
         )
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Testo del livello
         Text(
-            text = "Livello ${user.points/100}",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
+            text = "Livello ${user.level}",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color(0xFF2E2E2E)
         )
     }
 }
 
 @Composable
-fun FriendsLeaderboard(user: com.example.feedfree.models.User){
+fun UserStatsRow(user: User, totalTrophies: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(0.85f)
+            .offset(y = (-12).dp)
+            .background(Color(0xFFE2EBE0), RoundedCornerShape(16.dp))
+            .padding(vertical = 16.dp, horizontal = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        StatItem(label = "Punti", value = user.points.toString())
 
-    // Definizione del colore verde e della forma personalizzata
-    val customGreen = Color(0xFFB7CEB5) // Il tuo colore verde
-    val partialPillShape = RoundedCornerShape(
-        topStart = 24.dp,
-        topEnd = 24.dp,
-        bottomStart = 24.dp, // Regola il raggio qui per la curvatura in basso
-        bottomEnd = 24.dp
-    )
+        Box(modifier = Modifier.height(30.dp).width(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
 
-    // Contenitore principale a Colonna con lo sfondo e la forma personalizzati
+        StatItem(label = "Amici", value = (user.friends?.size ?: 0).toString())
+
+        Box(modifier = Modifier.height(30.dp).width(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
+
+        StatItem(label = "Trofei", value = totalTrophies.toString()) // Utilizza il dato dinamico
+    }
+}
+
+@Composable
+fun StatItem(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = label, fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF2E2E2E))
+    }
+}
+
+@Composable
+fun FriendsLeaderboard(user: User) {
+    val customGreen = Color(0xFFB7CEB5)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(16.dp),
-                clip = false // Evita che l'ombra venga tagliata
-            )
-            .background(color = customGreen, shape = partialPillShape)
-            .padding(25.dp), // Padding interno per distanziare gli elementi dai bordi
-        horizontalAlignment = Alignment.CenterHorizontally
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false)
+            .background(color = customGreen, shape = RoundedCornerShape(24.dp))
+            .padding(25.dp)
     ) {
-        // 2. Per ogni amico
-        user.friends?.forEach { amico ->
-            // Creiamo una riga per disporre l'immagine a sinistra e i testi a destra
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp, horizontal = 16.dp)
-            ) {
+        Text(
+            text = "Classifica Amici",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF2E2E2E),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
-                // IMMAGINE
-                // Nota: Se l'immagine viene da un URL, ti consiglio di usare la libreria Coil con AsyncImage.
-                // Qui uso Image con painterResource assumendo che sia una risorsa locale (es. R.drawable.avatar).
-                Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                    contentDescription = "Immagine di ${amico.name}",
-                    modifier = Modifier.size(50.dp)
-                )
+        val sortedFriends = (user.friends ?: emptyList()).sortedByDescending { it.points }
 
-                Spacer(modifier = Modifier.width(16.dp)) // Spazio tra immagine e testo
-                // NOME E PUNTI (Incolonnati verticalmente)
-                Column {
-                    // Nome
+        if (sortedFriends.isEmpty()) {
+            Text("Nessun amico aggiunto.", color = Color.DarkGray, fontSize = 14.sp)
+        } else {
+            sortedFriends.forEachIndexed { index, amico ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
                     Text(
-                        text = amico.name,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black // Leggibile sul verde
+                        text = "${index + 1}°",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF2E2E2E),
+                        modifier = Modifier.width(30.dp)
                     )
 
-                    // Punti
-                    Text(
-                        text = "Livello: ${amico.points/100}",
-                        fontSize = 16.sp,
-                        color = Color.DarkGray
+                    val friendAvatar = amico.avatarResId ?: R.drawable.ic_launcher_foreground
+                    Image(
+                        painter = painterResource(id = friendAvatar),
+                        contentDescription = "Immagine di ${amico.name}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
                     )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = amico.name,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Text(
+                            text = "Livello ${amico.level} • ${amico.points} pt",
+                            fontSize = 14.sp,
+                            color = Color(0xFF4A4A4A),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
@@ -259,71 +305,54 @@ fun FriendsLeaderboard(user: com.example.feedfree.models.User){
 }
 
 @Composable
-fun Platinums(user: com.example.feedfree.models.User) {
-
+fun Platinums(platinumActivities: List<CustomActivity>) {
     val customGreen = Color(0xFFB7CEB5)
-    val partialPillShape = RoundedCornerShape(24.dp) // Forma arrotondata su tutti i lati
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(16.dp),
-                clip = false // Evita che l'ombra venga tagliata
-            )
-            .background(color = customGreen, shape = partialPillShape)
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false)
+            .background(color = customGreen, shape = RoundedCornerShape(24.dp))
             .padding(25.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.Start // Allineamento coerente con la leaderboard
     ) {
-        // Titolo opzionale per la sezione
         Text(
             text = "Platini Ottenuti",
-            fontSize = 20.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = Color(0xFF2E2E2E)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // 1. Filtriamo la lista per tenere solo i Platini.
-        // Usiamo elvis operator (?: emptyList()) nel caso badges sia null
-        val platinumBadges = user.badges?.filter { it.type == Tier.PLATINUM } ?: emptyList()
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            items(platinumActivities) { activity ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    // Usiamo una larghezza fissa in modo che i testi lunghi vadano accapo bene
+                    modifier = Modifier.width(90.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = activity.tier.getDrawableRes()),
+                        contentDescription = "Badge Platino",
+                        modifier = Modifier.size(56.dp) // Leggermente ingrandito per spiccare
+                    )
 
-        if (platinumBadges.isEmpty()) {
-            // Se non ha platini, possiamo mostrare un messaggio
-            Text(text = "Nessun platino ottenuto ancora.", color = Color.DarkGray)
-        } else {
-            // 2. Usiamo LazyRow per lo scroll orizzontale
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                // horizontalArrangement distanzia automaticamente gli elementi tra loro
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Iteriamo sulla lista filtrata
-                items(platinumBadges) { badge ->
-                    // Design del singolo Badge di platino
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Immagine del badge (Sostituisci badge.imageId con la proprietà corretta)
-                        // Se l'immagine viene da internet, ricorda di usare AsyncImage (Coil)
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                            contentDescription = "Badge Platino",
-                            modifier = Modifier.size(60.dp)
-                        )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Nome del gioco o del badge
-                        Text(
-                            text = badge.name,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
-                        )
-                    }
+                    Text(
+                        text = activity.name,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF2E2E2E),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp, // Migliora la spaziatura quando il testo va accapo
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }
@@ -333,6 +362,5 @@ fun Platinums(user: com.example.feedfree.models.User) {
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
-    // Creiamo "al volo" un'istanza del ViewModel solo per far felice l'anteprima
     ProfileScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel())
 }

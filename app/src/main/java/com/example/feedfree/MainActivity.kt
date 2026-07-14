@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.feedfree.ui.badge.BadgesOverview
 import com.example.feedfree.ui.badge.BadgesMainScreen
+import com.example.feedfree.ui.home.HomeScreen
 import com.example.feedfree.ui.profile.ProfileScreen
 import com.example.feedfree.ui.profile.ProfileViewModel
 import com.example.feedfree.ui.stats.StatsScreen
@@ -76,17 +77,24 @@ fun FeedFreeApp() {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             when (currentDestination) {
                 AppDestinations.HOME -> {
-                    // Schermata temporanea per la Home
-                    Greeting(
-                        name = "Home Screen",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    val profileViewModel: ProfileViewModel = viewModel()
+                    val statsViewModel: StatsViewModel = viewModel()
+
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        HomeScreen(
+                            profileViewModel = profileViewModel,
+                            statsViewModel = statsViewModel,
+                            onNavigateToBacheca = {
+                                // Questo cambia la destinazione della bottom bar simulando il tap
+                                currentDestination = AppDestinations.BADGE
+                            }
+                        )
+                    }
                 }
                 AppDestinations.BADGE -> {
                     val profileViewModel: ProfileViewModel = viewModel()
                     Box(modifier = Modifier.padding(innerPadding)) {
-                        // Da così: BadgesPage(...)
-                        // A così:
+
                         BadgesMainScreen(viewModel = profileViewModel)
                     }
                 }

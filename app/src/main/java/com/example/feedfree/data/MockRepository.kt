@@ -1,5 +1,6 @@
 package com.example.feedfree.data
 
+import com.example.feedfree.R
 import com.example.feedfree.models.*
 import kotlinx.coroutines.delay
 
@@ -22,12 +23,12 @@ object MockRepository {
             username = "OiramR",
             points = 2000,
             level = 15,
-            avatarUrl = "https://ui-avatars.com/api/?name=A.+Cimmino",
+            avatarResId = R.drawable.giornogiovanna,
             badges = mockBadges,
             friends = listOf(
-                User("usr_002", "Antonio", "@antonio", 3500, 25, null, emptyList(), null),
-                User("usr_003", "Serena", "@aneres", 2000, 15, null, emptyList(), null),
-                User("usr_004", "Matteo", "@mato", 1500, 12, null, emptyList(), null)
+                User("usr_002", "Antonio", "@antonio", 3500, 25, R.drawable.fmab, emptyList(), null),
+                User("usr_003", "Serena", "@aneres", 2000, 15, R.drawable.rezero, emptyList(), null),
+                User("usr_004", "Matteo", "@mato", 1500, 12, R.drawable.ichigo, emptyList(), null)
             )
         )
     }

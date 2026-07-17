@@ -42,9 +42,25 @@ class ProfileViewModel : ViewModel() {
     }
 
     // Funzione per aggiornare un'attività (es. completarla dalla Home)
+    // Funzione per aggiornare un'attività (es. completarla dalla Home) o crearne una nuova
     fun updateActivity(updatedActivity: CustomActivity) {
+        // 1. Aggiorna o aggiunge l'attività alla lista globale
         _activities.update { currentList ->
-            currentList.map { if (it.id == updatedActivity.id) updatedActivity else it }
+            val index = currentList.indexOfFirst { it.id == updatedActivity.id }
+            if (index != -1) {
+                // Modifica: L'attività esiste, la sostituiamo
+                val mutableList = currentList.toMutableList()
+                mutableList[index] = updatedActivity
+                mutableList
+            } else {
+                // Creazione: L'attività non esiste, la aggiungiamo in coda
+                currentList + updatedActivity
+            }
+        }
+
+        // 2. Sincronizza la vista di dettaglio (Fondamentale per far funzionare le spunte!)
+        if (_selectedActivityForDetails.value?.id == updatedActivity.id) {
+            _selectedActivityForDetails.value = updatedActivity
         }
     }
 

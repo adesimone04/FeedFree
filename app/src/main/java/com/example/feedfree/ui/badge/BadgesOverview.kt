@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -67,7 +68,7 @@ fun BadgesOverview(
                 title = {
                     Text("Badges", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = DarkGrayText)
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+
             )
         },
         floatingActionButton = {
@@ -80,7 +81,6 @@ fun BadgesOverview(
                 Icon(Icons.Default.Add, contentDescription = "Aggiungi")
             }
         },
-        containerColor = Color.White
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -159,7 +159,9 @@ fun OverallProgressCard(
     onHistoryClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
@@ -214,7 +216,11 @@ fun ActivitySummaryCard(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).clickable { onClick() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false)
+            .clip(RoundedCornerShape(24.dp))
+            .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {

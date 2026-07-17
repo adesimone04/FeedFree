@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,10 +46,10 @@ fun TrophyHistoryScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) { Icon(imageVector = Icons.Default.ArrowBackIosNew, contentDescription = "Indietro", tint = DarkGrayText) }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+
             )
         },
-        containerColor = Color.White
+
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -86,6 +87,7 @@ fun TrophyHistoryScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false)
                             .padding(bottom = 12.dp)
                             .clip(RoundedCornerShape(24.dp))
                             .clickable { onActivityClick(activity) },
@@ -120,7 +122,9 @@ fun EarnedTrophiesSummaryCard(completedActivities: List<CustomActivity>) {
     val bronzeCount = completedActivities.count { it.tier == Tier.BRONZE }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {

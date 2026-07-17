@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
@@ -51,10 +52,10 @@ fun ActivityDetail(
                         Icon(imageVector = Icons.Default.Edit, contentDescription = "Modifica", tint = DarkGrayText)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+
             )
         },
-        containerColor = Color.White
+
     ) { paddingValues ->
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
@@ -93,7 +94,10 @@ fun ActivityDetail(
 @Composable
 fun DetailProgressCard(progress: Float, rewardTier: Tier) {
     Card(
-        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
         Row(
@@ -126,7 +130,10 @@ fun GoalCard(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
         Row(

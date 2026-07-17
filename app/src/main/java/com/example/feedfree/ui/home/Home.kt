@@ -11,6 +11,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
@@ -27,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -75,7 +77,6 @@ fun HomeScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -134,6 +135,7 @@ fun BadgeCongratulationCard(completedActivities: List<CustomActivity>, onTrophyC
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false)
             .clip(RoundedCornerShape(24.dp)),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
@@ -190,7 +192,9 @@ fun BadgeListItem(activity: CustomActivity, onClick: () -> Unit) {
 @Composable
 fun ScreentimeCard(totalScreenTime: Long) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
@@ -321,7 +325,9 @@ fun BlockDistractionsCard() {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
@@ -550,7 +556,9 @@ fun TimeBox(value: String, label: String, onClick: () -> Unit) {
 @Composable
 fun ActivitiesInProgressCard(activities: List<CustomActivity>, onActivityToggle: (CustomActivity) -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
@@ -607,8 +615,17 @@ fun ActivityCheckboxItem(taskName: String, isChecked: Boolean, onCheckedChange: 
         Box(
             modifier = Modifier
                 .size(24.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(if (isChecked) DarkGreenAccent else DarkGrayText),
+                // Se non è checkato, lo sfondo è trasparente. Se checkato, è verde.
+                .background(
+                    color = if (isChecked) DarkGreenAccent else Color.Transparent,
+                    shape = RoundedCornerShape(4.dp)
+                )
+                // Aggiungiamo il contorno scuro solo quando non è checkato
+                .border(
+                    width = 2.dp,
+                    color = if (isChecked) Color.Transparent else DarkGrayText,
+                    shape = RoundedCornerShape(4.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
             if (isChecked) {

@@ -38,6 +38,21 @@ fun BadgesMainScreen(viewModel: ProfileViewModel) {
     var showActivityForm by remember { mutableStateOf(false) }
     var activityToEdit by remember { mutableStateOf<CustomActivity?>(null) }
 
+    val completedActivities = activities.filter { activity ->
+        if (activity.goals.isNotEmpty()) activity.goals.all { it.isCompleted } else activity.isCompleted
+    }
+
+    val calculatedPoints = completedActivities.sumOf { activity ->
+        when (activity.tier) {
+            Tier.PLATINUM -> 1000
+            Tier.GOLD -> 500
+            Tier.SILVER -> 200
+            Tier.BRONZE -> 100
+        }
+    }
+
+    val calculatedLevel = maxOf(0, calculatedPoints / 1000)
+
     when {
         selectedActivity != null -> {
             ActivityDetail(
@@ -64,7 +79,7 @@ fun BadgesMainScreen(viewModel: ProfileViewModel) {
         else -> {
             BadgesOverview(
                 activities = activities,
-                userLevel = userState?.level ?: 1,
+                userLevel = calculatedLevel,
                 onActivityClick = { activity -> viewModel.selectActivityForDetails(activity) },
                 onHistoryClick = { showHistory = true },
                 onAddClick = {

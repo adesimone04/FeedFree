@@ -1,7 +1,11 @@
 package com.example.feedfree.ui.stats
 
 import android.content.Intent
+import androidx.compose.ui.window.Dialog
+import androidx.compose.material.icons.filled.Search
 import android.provider.Settings
+import com.example.feedfree.ui.home.InfiniteWheelPicker
+import com.example.feedfree.ui.home.TimeBox
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -55,6 +59,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.input.KeyboardType
@@ -79,7 +84,7 @@ fun StatsScreen(viewModel: StatsViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var selectedAppForPopup by remember { mutableStateOf<AppInfo?>(null) }
-
+    var searchQuery by remember { mutableStateOf("") }
     val blockedApps by viewModel.blockedApps.collectAsState()
     val monitoredApps by viewModel.monitoredApps.collectAsState()
     val appTimers by viewModel.appTimers.collectAsState()
@@ -97,22 +102,22 @@ fun StatsScreen(viewModel: StatsViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = {
-                    // Manda l'utente dritto alla pagina delle impostazioni giusta!
+
                     context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF85B08F), // Il colore di sfondo (verde)
-                    contentColor = Color(0xFF484E5F)          // Il colore del testo e delle eventuali icone interne
+                        containerColor = Color(0xFF85B08F),
+                    contentColor = Color(0xFF484E5F)
                 )
                 ) {
                     Text("Concedi Permesso")
                 }
             }
         }
-        return // Fermiamo il rendering qui se manca il permesso
+        return
     }
 
-    // Se i dati non sono ancora stati caricati, mostriamo un testo temporaneo
+
     if (uiState == null) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -123,10 +128,10 @@ fun StatsScreen(viewModel: StatsViewModel) {
         return
     }
 
-    // Estraiamo lo stato
+
     val state = uiState!!
 
-    // Formattiamo il tempo totale
+
     val timeString = formatScreenTime(state.totalScreenTimeMillis)
     val screenTimeMillis = state.totalScreenTimeMillis
 
@@ -202,15 +207,51 @@ fun StatsScreen(viewModel: StatsViewModel) {
             fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Start,
+            modifier = Modifier.fillMaxWidth(),
             color = Color.Black
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        MyApps(
-            apps = state.allInstalledApps,
-            onAppClick = { appCliccata ->
-                selectedAppForPopup = appCliccata
-            }
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 1. LA BARRA DI RICERCA
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Cerca un'app...") },
+            leadingIcon = {
+                Icon(imageVector = Icons.Default.Search, contentDescription = "Cerca")
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF86B98F), // Verde del tuo tema
+                unfocusedBorderColor = Color.LightGray
+            )
         )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 2. FILTRAGGIO IN TEMPO REALE
+        val filteredApps = state.allInstalledApps.filter {
+            it.appName.contains(searchQuery, ignoreCase = true)
+        }
+
+        // 3. MOSTRA LA LISTA O IL MESSAGGIO DI ERRORE
+        if (filteredApps.isEmpty()) {
+            Text(
+                text = "Nessuna app trovata.",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                textAlign = TextAlign.Center
+            )
+        } else {
+            MyApps(
+                apps = filteredApps, // Passiamo la lista filtrata invece di quella completa
+                onAppClick = { appCliccata ->
+                    selectedAppForPopup = appCliccata
+                }
+            )
+        }
         Spacer(modifier = Modifier.height(32.dp))
     }
     selectedAppForPopup?.let { app ->
@@ -425,145 +466,171 @@ fun MyApps(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppBottomSheet(
     app: AppInfo,
-    initialIsBlocked: Boolean,      // ⬅️ NUOVI PARAMETRI
+    initialIsBlocked: Boolean,
     initialIsMonitored: Boolean,
     initialTimerMillis: Long,
     onDismiss: () -> Unit,
     onSaveConfig: (app: AppInfo, tabIndex: Int, isActive: Boolean, ore: String, minuti: String) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
     var selectedTab by remember { mutableStateOf(0) }
 
-    // Stati indipendenti per ogni tab, inizializzati con i valori passati dal mock
     var isBlockedActive by remember { mutableStateOf(initialIsBlocked) }
     var isMonitoredActive by remember { mutableStateOf(initialIsMonitored) }
 
-    // Calcolo ore e minuti per il timer
-    val initialHours = initialTimerMillis / 3600000L
-    val initialMins = (initialTimerMillis % 3600000L) / 60000L
+    // Convertiamo in Int per gestire meglio il selettore a rotella
+    val initialHours = (initialTimerMillis / 3600000L).toInt()
+    val initialMins = ((initialTimerMillis % 3600000L) / 60000L).toInt()
 
-    var ore by remember { mutableStateOf(if (initialHours > 0) initialHours.toString() else "0") }
-    var minuti by remember { mutableStateOf(if (initialMins > 0) initialMins.toString().padStart(2, '0') else "00") }
+    var selectedHour by remember { mutableIntStateOf(if (initialHours > 0) initialHours else 0) }
+    var selectedMinute by remember { mutableIntStateOf(if (initialMins > 0) initialMins else 0) }
 
-    val sheetBgColor = Color(0xFFC3D8C2)
-    val cardBgColor = Color(0xFFE2EBE0)
-    val tabSelectedColor = Color(0xFF9FB99D)
-    val darkText = Color(0xFF1E1E1E)
+    // Stato per mostrare/nascondere la rotella in stile iOS
+    var showTimeDialog by remember { mutableStateOf(false) }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = sheetBgColor
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 48.dp)
+    val darkGrayText = Color(0xFF2E2E2E)
+    val darkGreenAccent = Color(0xFF86B98F)
+    val lightGreenBg = Color(0xFFCDE0C9)
+
+    // Popup del timer a rotella
+    if (showTimeDialog) {
+        DurationWheelTimePickerDialog(
+            initialHour = selectedHour,
+            initialMinute = selectedMinute,
+            onDismiss = { showTimeDialog = false },
+            onTimeSelected = { h, m ->
+                selectedHour = h
+                selectedMinute = m
+                showTimeDialog = false
+            }
+        )
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            shadowElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth()
         ) {
-
-            Text(text = "Gestisci ${app.appName}", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = darkText)
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Image(
-                bitmap = app.icon.toBitmap(width = 200, height = 200).asImageBitmap(),
-                contentDescription = null,
-                modifier = Modifier.size(80.dp)
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 1. SEGMENTED BUTTONS
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-                    .border(BorderStroke(1.dp, Color.DarkGray), RoundedCornerShape(20.dp))
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.Transparent),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())
             ) {
-                val tabs = listOf("Blocca", "Monitora", "Timer")
-                tabs.forEachIndexed { index, title ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .background(if (selectedTab == index) tabSelectedColor else Color.Transparent)
-                            .clickable { selectedTab = index },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = title,
-                            fontSize = 14.sp,
-                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                            color = darkText
-                        )
+                Text(text = "Gestisci ${app.appName}", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = darkGrayText)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Image(
+                    bitmap = app.icon.toBitmap(width = 200, height = 200).asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp)
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // 1. SEGMENTED BUTTONS
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .border(BorderStroke(1.dp, Color(0xFFE0E0E0)), RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.Transparent),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val tabs = listOf("Blocca", "Monitora", "Timer")
+                    tabs.forEachIndexed { index, title ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .background(if (selectedTab == index) lightGreenBg else Color.Transparent)
+                                .clickable { selectedTab = index },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = title,
+                                fontSize = 14.sp,
+                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                                color = darkGrayText
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // 2. CONTENUTO DINAMICO
-            if (selectedTab == 0 || selectedTab == 1) {
-                // Legge lo stato giusto in base al tab selezionato
-                val isCurrentlyActive = if (selectedTab == 0) isBlockedActive else isMonitoredActive
+                // 2. CONTENUTO DINAMICO
+                if (selectedTab == 0 || selectedTab == 1) {
+                    val isCurrentlyActive = if (selectedTab == 0) isBlockedActive else isMonitoredActive
 
-                Switch(
-                    checked = isCurrentlyActive,
-                    onCheckedChange = { newState ->
-                        if (selectedTab == 0) isBlockedActive = newState else isMonitoredActive = newState
-                        // Salva in tempo reale nel ViewModel mockato
-                        onSaveConfig(app, selectedTab, newState, "0", "0")
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = darkText, checkedTrackColor = tabSelectedColor,
-                        uncheckedThumbColor = Color.Gray, uncheckedTrackColor = Color.LightGray
+                    Switch(
+                        checked = isCurrentlyActive,
+                        onCheckedChange = { newState ->
+                            if (selectedTab == 0) isBlockedActive = newState else isMonitoredActive = newState
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White, checkedTrackColor = darkGreenAccent,
+                            uncheckedThumbColor = Color.Gray, uncheckedTrackColor = Color.LightGray
+                        )
                     )
-                )
-            } else {
-                // UI TIMER
-                Surface(shape = RoundedCornerShape(16.dp), color = cardBgColor, modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Timer giornaliero applicazione", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray, modifier = Modifier.align(Alignment.Start))
+                    Spacer(modifier = Modifier.height(32.dp))
+                } else {
+                    // UI TIMER: Ora utilizza i TimeBox cliccabili identici alla Home
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Text("Timer giornaliero", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = darkGrayText, modifier = Modifier.align(Alignment.Start))
                         Spacer(modifier = Modifier.height(16.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            OutlinedTextField(
-                                value = ore, onValueChange = { if (it.length <= 2) ore = it },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 28.sp),
-                                modifier = Modifier.weight(1f).background(tabSelectedColor, RoundedCornerShape(8.dp)),
-                                singleLine = true, shape = RoundedCornerShape(8.dp)
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TimeBox(
+                                value = selectedHour.toString(),
+                                label = "Ore",
+                                onClick = { showTimeDialog = true }
                             )
-                            Text(" : ", fontSize = 32.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
-                            OutlinedTextField(
-                                value = minuti, onValueChange = { if (it.length <= 2) minuti = it },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 28.sp),
-                                modifier = Modifier.weight(1f).background(tabSelectedColor, RoundedCornerShape(8.dp)),
-                                singleLine = true, shape = RoundedCornerShape(8.dp)
+
+                            Text(" : ", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = darkGrayText, modifier = Modifier.padding(horizontal = 8.dp))
+
+                            TimeBox(
+                                value = selectedMinute.toString().padStart(2, '0'),
+                                label = "Minuti",
+                                onClick = { showTimeDialog = true }
                             )
                         }
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
-                            Text("Hour", fontSize = 10.sp, color = Color.DarkGray)
-                            Text("Minute", fontSize = 10.sp, color = Color.DarkGray)
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            TextButton(onClick = { onDismiss() }) {
-                                Text("Cancel", color = darkText, fontWeight = FontWeight.Bold)
-                            }
-                            TextButton(onClick = {
-                                onSaveConfig(app, selectedTab, true, ore, minuti)
-                                onDismiss()
-                            }) {
-                                Text("OK", color = darkText, fontWeight = FontWeight.Bold)
-                            }
-                        }
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+                }
+
+                // PULSANTI DI AZIONE
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Annulla", color = Color.Gray, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = {
+                            val activeState = if (selectedTab == 0) isBlockedActive else isMonitoredActive
+                            onSaveConfig(app, selectedTab, activeState, selectedHour.toString(), selectedMinute.toString())
+                            onDismiss()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = darkGreenAccent
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Salva", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
                     }
                 }
             }
@@ -747,4 +814,62 @@ fun TimerAppsList(
             }
         }
     }
+}
+
+@Composable
+fun DurationWheelTimePickerDialog(
+    initialHour: Int,
+    initialMinute: Int,
+    onDismiss: () -> Unit,
+    onTimeSelected: (Int, Int) -> Unit
+) {
+    var selectedHour by remember { mutableIntStateOf(initialHour) }
+    var selectedMinute by remember { mutableIntStateOf(initialMinute) }
+
+    // Generiamo le liste di numeri per una durata (0-23 ore, 0-59 minuti)
+    val hoursList = (0..23).map { it.toString() }
+    val minutesList = (0..59).map { it.toString().padStart(2, '0') }
+
+    val darkGrayText = Color(0xFF2E2E2E)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Imposta timer", fontWeight = FontWeight.Bold, color = darkGrayText, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        },
+        text = {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Rotella Ore
+                InfiniteWheelPicker(
+                    items = hoursList,
+                    initialIndex = initialHour,
+                    onItemSelected = { selectedHour = it },
+                    modifier = Modifier.weight(1f)
+                )
+
+                Text(" : ", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = darkGrayText)
+
+                // Rotella Minuti
+                InfiniteWheelPicker(
+                    items = minutesList,
+                    initialIndex = initialMinute,
+                    onItemSelected = { selectedMinute = it },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        },
+        containerColor = Color(0xFFEBEBEB),
+        confirmButton = {
+            TextButton(onClick = { onTimeSelected(selectedHour, selectedMinute) }) {
+                Text("Salva", fontWeight = FontWeight.Bold, color = Color(0xFF67A989), fontSize = 16.sp)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Annulla", color = Color.Gray, fontSize = 16.sp) }
+        }
+    )
 }

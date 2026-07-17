@@ -60,6 +60,17 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
         if (activity.goals.isNotEmpty()) activity.goals.all { it.isCompleted } else activity.isCompleted
     }
 
+    val calculatedPoints = completedActivities.sumOf { activity ->
+        when (activity.tier) {
+            Tier.PLATINUM -> 1000
+            Tier.GOLD -> 500
+            Tier.SILVER -> 200
+            Tier.BRONZE -> 100
+        }
+    }
+
+    val calculatedLevel = maxOf(0, calculatedPoints / 1000)
+
     // Filtro per i trofei di Platino
     val platinumActivities = completedActivities.filter { it.tier == Tier.PLATINUM }
 
@@ -71,10 +82,10 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
     ) {
         ProfileHeader(user = user)
 
-        LevelBanner(user = user)
+        LevelBanner(calculatedLevel)
 
         // Passiamo il vero numero di trofei completati
-        UserStatsRow(user = user, totalTrophies = completedActivities.size)
+        UserStatsRow(user = user, totalTrophies = completedActivities.size, calculatedPoints = calculatedPoints)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -169,7 +180,7 @@ fun ProfileHeader(user: User) {
 }
 
 @Composable
-fun LevelBanner(user: User) {
+fun LevelBanner(calculatedLevel: Int) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -190,7 +201,7 @@ fun LevelBanner(user: User) {
         Spacer(modifier = Modifier.width(12.dp))
 
         Text(
-            text = "Livello ${user.level}",
+            text = "Livello $calculatedLevel",
             fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold,
             color = Color(0xFF2E2E2E)
@@ -199,7 +210,7 @@ fun LevelBanner(user: User) {
 }
 
 @Composable
-fun UserStatsRow(user: User, totalTrophies: Int) {
+fun UserStatsRow(user: User, totalTrophies: Int, calculatedPoints: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth(0.85f)
@@ -209,7 +220,7 @@ fun UserStatsRow(user: User, totalTrophies: Int) {
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        StatItem(label = "Punti", value = user.points.toString())
+        StatItem(label = "Punti", value = calculatedPoints.toString())
 
         Box(modifier = Modifier.height(30.dp).width(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
 

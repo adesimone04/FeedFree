@@ -1,5 +1,6 @@
 package com.example.feedfree
 
+import HomeViewModel
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -79,13 +80,24 @@ fun FeedFreeApp() {
                 AppDestinations.HOME -> {
                     val profileViewModel: ProfileViewModel = viewModel()
                     val statsViewModel: StatsViewModel = viewModel()
+                    val homeViewModel: HomeViewModel = viewModel()
 
                     Box(modifier = Modifier.padding(innerPadding)) {
+
                         HomeScreen(
                             profileViewModel = profileViewModel,
                             statsViewModel = statsViewModel,
+                            homeViewModel = homeViewModel,
+
                             onNavigateToBacheca = {
                                 // Questo cambia la destinazione della bottom bar simulando il tap
+                                currentDestination = AppDestinations.BADGE
+                            },
+                            onNavigateToStats = {
+                                currentDestination = AppDestinations.STATISTICHE
+                            },
+                            onActivityClick = { activity ->
+                                profileViewModel.selectActivityForDetails(activity)
                                 currentDestination = AppDestinations.BADGE
                             }
                         )

@@ -26,9 +26,9 @@ object MockRepository {
             avatarResId = R.drawable.giornogiovanna,
             badges = mockBadges,
             friends = listOf(
-                User("usr_002", "Antonio", "@antonio", 3500, 25, R.drawable.fmab, emptyList(), null),
-                User("usr_003", "Serena", "@aneres", 2000, 15, R.drawable.rezero, emptyList(), null),
-                User("usr_004", "Matteo", "@mato", 1500, 12, R.drawable.ichigo, emptyList(), null)
+                User("usr_002", "Antonio", "@antonio", 3500, 3, R.drawable.fmab, emptyList(), null),
+                User("usr_003", "Serena", "@aneres", 2000, 2, R.drawable.rezero, emptyList(), null),
+                User("usr_004", "Matteo", "@mato", 1500, 1, R.drawable.ichigo, emptyList(), null)
             )
         )
     }

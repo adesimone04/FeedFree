@@ -592,9 +592,9 @@ fun ActivitiesInProgressCard(
         label = "arrow_rotation"
     )
 
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
             .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
 
         shape = RoundedCornerShape(24.dp),

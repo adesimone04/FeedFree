@@ -236,7 +236,7 @@ fun ActivityFormDialog(
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Rimuovi Task",
-                                tint = Color(0xFFB0B0B0) // Grigio al posto del rosso aggressivo
+                                tint = Color(0xFFB0B0B0)
                             )
                         }
                     }
@@ -276,7 +276,8 @@ fun ActivityFormDialog(
                             )
                             onSave(newActivity)
                         },
-                        enabled = name.isNotBlank(),
+                        // ECCO LA MODIFICA: Richiede nome NON vuoto E almeno un task compilato
+                        enabled = name.isNotBlank() && goals.any { it.name.isNotBlank() },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DarkGreenAccent,
                             disabledContainerColor = LightGreenBg

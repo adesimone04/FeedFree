@@ -1,5 +1,10 @@
 package com.example.feedfree.ui.home
 
+import HomeViewModel
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.draw.rotate
 import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -17,9 +22,12 @@ import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.LockClock
@@ -42,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.feedfree.models.CustomActivity
 import com.example.feedfree.ui.badge.getDrawableRes
 import com.example.feedfree.ui.profile.ProfileViewModel
@@ -59,8 +68,11 @@ val DarkGrayText = Color(0xFF2E2E2E)
 fun HomeScreen(
     profileViewModel: ProfileViewModel,
     statsViewModel: StatsViewModel,
+    homeViewModel: HomeViewModel,
     onNavigateToBacheca: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToStats: () -> Unit,
+    onActivityClick: (CustomActivity) -> Unit
 ) {
     val userState by profileViewModel.uiState.collectAsState()
     val statsState by statsViewModel.uiState.collectAsState()
@@ -74,7 +86,11 @@ fun HomeScreen(
         if (activity.goals.isNotEmpty()) activity.goals.all { it.isCompleted } else activity.isCompleted
     }
 
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
@@ -103,22 +119,32 @@ fun HomeScreen(
         }
 
         item {
-            ScreentimeCard(
-                totalScreenTime = statsState?.totalScreenTimeMillis ?: 0L
+            ActivitiesInProgressCard(
+                activities = pendingActivities,
+                onActivityClick = { activity ->
+                    profileViewModel.selectActivityForDetails(activity)
+                    onNavigateToBacheca()
+                },
             )
         }
 
-        item { BlockDistractionsCard() }
+        item {
+            ScreentimeCard(
+                totalScreenTime = statsState?.totalScreenTimeMillis ?: 0L, onClick = onNavigateToStats
+            )
+        }
 
         item {
-            ActivitiesInProgressCard(
-                activities = pendingActivities,
-                onActivityToggle = { toggledActivity ->
-                    val updatedActivity = toggledActivity.copy(
-                        isCompleted = true,
-                        goals = toggledActivity.goals.map { it.copy(isCompleted = true) }
-                    )
-                    profileViewModel.updateActivity(updatedActivity)
+            BlockDistractionsCard(
+                hour = homeViewModel.hour,
+                minute = homeViewModel.minute,
+                isActive = homeViewModel.isTimerActive,
+                onTimeSelected = { h, m ->
+                    homeViewModel.hour = h
+                    homeViewModel.minute = m
+                },
+                onToggleActive = { checked ->
+                    homeViewModel.isTimerActive = checked
                 }
             )
         }
@@ -190,11 +216,12 @@ fun BadgeListItem(activity: CustomActivity, onClick: () -> Unit) {
 }
 
 @Composable
-fun ScreentimeCard(totalScreenTime: Long) {
+fun ScreentimeCard(totalScreenTime: Long, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false)
+            .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
@@ -302,13 +329,16 @@ fun ScreentimeAnimatedGraph(screenTimeMillis: Long) {
     }
 }
 
-@Composable
-fun BlockDistractionsCard() {
-    var hour by remember { mutableIntStateOf(8) }
-    var minute by remember { mutableIntStateOf(30) }
-    var isAm by remember { mutableStateOf(true) }
-    val context = LocalContext.current
 
+@Composable
+fun BlockDistractionsCard(
+    hour: Int,
+    minute: Int,
+    isActive: Boolean,
+    onTimeSelected: (Int, Int) -> Unit,
+    onToggleActive: (Boolean) -> Unit
+) {
+    val context = LocalContext.current
     var showDialog by remember { mutableStateOf(false) }
 
     if (showDialog) {
@@ -317,8 +347,8 @@ fun BlockDistractionsCard() {
             initialMinute = minute,
             onDismiss = { showDialog = false },
             onTimeSelected = { h, m ->
-                hour = h
-                minute = m
+
+                onTimeSelected(h, m)
                 showDialog = false
             }
         )
@@ -332,89 +362,86 @@ fun BlockDistractionsCard() {
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = "Blocca distrazioni fino alle...",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = DarkGrayText
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TimeBox(
-                    value = hour.toString(),
-                    label = "Hour",
-                    onClick = { showDialog = true }
-                )
-
-                Text(" : ", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = DarkGrayText, modifier = Modifier.padding(horizontal = 8.dp))
-
-                TimeBox(
-                    value = minute.toString().padStart(2, '0'),
-                    label = "Minute",
-                    onClick = { showDialog = true }
-                )
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column {
-                    Box(modifier = Modifier
-                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                        .background(if (isAm) DarkGrayText else Color(0xFF9CA39F))
-                        .clickable { isAm = true }
-                        .padding(horizontal = 12.dp, vertical = 6.dp)) {
-                        Text("AM", color = if (isAm) Color.White else DarkGrayText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Box(modifier = Modifier
-                        .clip(RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp))
-                        .background(if (!isAm) DarkGrayText else Color(0xFF9CA39F))
-                        .clickable { isAm = false }
-                        .padding(horizontal = 12.dp, vertical = 6.dp)) {
-                        Text("PM", color = if (!isAm) Color.White else DarkGrayText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(imageVector = Icons.Outlined.LockClock, contentDescription = "Lock", tint = DarkGrayText)
+                Text(
+                    text = "Blocca distrazioni fino alle...",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = DarkGrayText
+                )
 
-                Row {
-                    TextButton(onClick = { hour = 8; minute = 30 }) {
-                        Text("Cancel", color = DarkGrayText, fontWeight = FontWeight.Bold)
-                    }
-                    TextButton(
-                        onClick = {
-                            // Mostra un messaggio di conferma con l'orario scelto
-                            val amPmStr = if (isAm) "AM" else "PM"
-                            val minStr = minute.toString().padStart(2, '0')
-                            Toast.makeText(
-                                context,
-                                "Distrazioni bloccate fino alle $hour:$minStr $amPmStr",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    ) {
-                        Text("OK", color = DarkGrayText, fontWeight = FontWeight.Bold)
-                    }
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(if (isActive) Color(0xFFC88282) else Color.LightGray)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TimeBox(
+                        value = hour.toString().padStart(2, '0'),
+                        label = "Hour",
+                        onClick = { showDialog = true }
+                    )
+
+                    Text(" : ", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = DarkGrayText, modifier = Modifier.padding(horizontal = 8.dp))
+
+                    TimeBox(
+                        value = minute.toString().padStart(2, '0'),
+                        label = "Minute",
+                        onClick = { showDialog = true }
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Switch(
+                    checked = isActive,
+                    onCheckedChange = { checked ->
+                        onToggleActive(checked)
+
+                        val minStr = minute.toString().padStart(2, '0')
+                        val hourStr = hour.toString().padStart(2, '0')
+
+                        val msg = if (checked) {
+                            val now = java.util.Calendar.getInstance()
+                            val currentH = now.get(java.util.Calendar.HOUR_OF_DAY)
+                            val currentM = now.get(java.util.Calendar.MINUTE)
+
+                            val isTomorrow = hour < currentH || (hour == currentH && minute <= currentM)
+
+                            val suffix = if (isTomorrow) " di domani" else ""
+
+                            "Distrazioni bloccate fino alle $hourStr:$minStr$suffix"
+                        } else {
+                            "Blocco distrazioni disattivato"
+                        }
+
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = Color(0xFF757575),
+                        checkedThumbColor = Color(0xFFE0E0E0),
+                        uncheckedTrackColor = Color(0xFFE0E0E0),
+                        uncheckedThumbColor = Color(0xFF757575)
+                    )
+                )
             }
         }
     }
 }
-
-// --- SEZIONE TIMER DINAMICO CON SCROLL INFINITO TIPO IOS ---
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InfiniteWheelPicker(
@@ -489,7 +516,7 @@ fun WheelTimePickerDialog(
     var selectedMinute by remember { mutableIntStateOf(initialMinute) }
 
     // Generiamo le liste di numeri
-    val hoursList = (1..12).map { it.toString() }
+    val hoursList = (0..23).map { it.toString().padStart(2, '0') }
     val minutesList = (0..59).map { it.toString().padStart(2, '0') }
 
     AlertDialog(
@@ -506,8 +533,8 @@ fun WheelTimePickerDialog(
                 // Rotella Ore
                 InfiniteWheelPicker(
                     items = hoursList,
-                    initialIndex = initialHour - 1, // L'array parte da 0, l'ora da 1
-                    onItemSelected = { selectedHour = it + 1 },
+                    initialIndex = initialHour,
+                    onItemSelected = { selectedHour = it },
                     modifier = Modifier.weight(1f)
                 )
 
@@ -554,51 +581,85 @@ fun TimeBox(value: String, label: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun ActivitiesInProgressCard(activities: List<CustomActivity>, onActivityToggle: (CustomActivity) -> Unit) {
+fun ActivitiesInProgressCard(
+    activities: List<CustomActivity>,
+    onActivityClick: (CustomActivity) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val rotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "arrow_rotation"
+    )
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
+
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = LightGreenBg)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painter = painterResource(id = com.example.feedfree.R.drawable.baseline_workspace_premium_24), contentDescription = null, tint = DarkGrayText, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Attività in corso", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkGrayText)
-                }
-                Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Expand", tint = DarkGrayText)
-            }
+            colors = CardDefaults.cardColors(containerColor = LightGreenBg)
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { expanded = !expanded }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = com.example.feedfree.R.drawable.baseline_workspace_premium_24),
+                            contentDescription = null,
+                            tint = DarkGrayText,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Attività in corso", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkGrayText)
+                    }
 
-            if (activities.isEmpty()) {
-                Text(text = "Nessuna attività in corso.", fontSize = 14.sp, color = DarkGrayText)
-            } else {
-                activities.forEach { activity ->
-                    ActivityCheckboxItem(
-                        taskName = activity.name,
-                        isChecked = false,
-                        onCheckedChange = { onActivityToggle(activity) }
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Espandi o chiudi",
+                        tint = DarkGrayText,
+                        modifier = Modifier.rotate(rotation)
                     )
+                }
+
+                AnimatedVisibility(visible = expanded) {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        if (activities.isEmpty()) {
+                            Text(text = "Nessuna attività in corso.", fontSize = 14.sp, color = DarkGrayText)
+                        } else {
+                            activities.forEach { activity ->
+                                ActivityNavigationItem(
+                                    taskName = activity.name,
+                                    onClick = { onActivityClick(activity) }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-}
+
 
 @Composable
-fun ActivityCheckboxItem(taskName: String, isChecked: Boolean, onCheckedChange: () -> Unit) {
+fun ActivityNavigationItem(
+    taskName: String,
+    onClick: () -> Unit // Sostituisce onCheckedChange
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCheckedChange() }
+            .clickable { onClick() }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -612,30 +673,12 @@ fun ActivityCheckboxItem(taskName: String, isChecked: Boolean, onCheckedChange: 
             modifier = Modifier.weight(1f).padding(end = 16.dp)
         )
 
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                // Se non è checkato, lo sfondo è trasparente. Se checkato, è verde.
-                .background(
-                    color = if (isChecked) DarkGreenAccent else Color.Transparent,
-                    shape = RoundedCornerShape(4.dp)
-                )
-                // Aggiungiamo il contorno scuro solo quando non è checkato
-                .border(
-                    width = 2.dp,
-                    color = if (isChecked) Color.Transparent else DarkGrayText,
-                    shape = RoundedCornerShape(4.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isChecked) {
-                Icon(
-                    imageVector = Icons.Outlined.Check,
-                    contentDescription = "Check",
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        }
+        // Sostituiamo tutto il Box della checkbox con una semplice Icona
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowRight,
+            contentDescription = "Vai alla sezione badge dell'attività",
+            tint = DarkGrayText,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }

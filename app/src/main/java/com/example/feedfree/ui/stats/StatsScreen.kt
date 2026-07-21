@@ -178,7 +178,7 @@ fun StatsScreen(viewModel: StatsViewModel) {
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "Applicazioni bloccate:",
+            text = "Distrazioni:",
             fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Start,
@@ -188,7 +188,7 @@ fun StatsScreen(viewModel: StatsViewModel) {
         val appsBloccate = state.allInstalledApps.filter { blockedApps.contains(it.packageName) }
         if (appsBloccate.isEmpty()) {
             Text(
-                text = "Nessuna applicazione bloccata.",
+                text = "Nessuna applicazione segnata come distrazione.",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.fillMaxWidth(),
@@ -540,7 +540,7 @@ fun AppBottomSheet(
                         .background(Color.Transparent),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val tabs = listOf("Blocca", "Monitora", "Timer")
+                    val tabs = listOf("Distrazione", "Monitora", "Timer")
                     tabs.forEachIndexed { index, title ->
                         Box(
                             modifier = Modifier

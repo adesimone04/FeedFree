@@ -8,8 +8,11 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaul
 import androidx.compose.ui.graphics.Color
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -22,9 +25,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.example.feedfree.ui.badge.BadgesOverview
 import com.example.feedfree.ui.badge.BadgesMainScreen
 import com.example.feedfree.ui.home.HomeScreen
@@ -38,6 +45,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
         setContent {
             FeedFreeTheme {
                 FeedFreeApp()
@@ -53,7 +62,7 @@ fun FeedFreeApp() {
 
     val customItemColors = NavigationSuiteDefaults.itemColors(
         navigationBarItemColors = NavigationBarItemDefaults.colors(
-            indicatorColor = Color(0xFF8AB895) // Il tuo verde personalizzato
+            indicatorColor = Color(0xFF8AB895)
         )
     )
 
@@ -75,57 +84,60 @@ fun FeedFreeApp() {
             }
         }
     ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            when (currentDestination) {
-                AppDestinations.HOME -> {
-                    val profileViewModel: ProfileViewModel = viewModel()
-                    val statsViewModel: StatsViewModel = viewModel()
-                    val homeViewModel: HomeViewModel = viewModel()
+            Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                when (currentDestination) {
+                    AppDestinations.HOME -> {
+                        val profileViewModel: ProfileViewModel = viewModel()
+                        val statsViewModel: StatsViewModel = viewModel()
+                        val homeViewModel: HomeViewModel = viewModel()
 
-                    Box(modifier = Modifier.padding(innerPadding)) {
+                        Box(modifier = Modifier.padding(innerPadding)) {
 
-                        HomeScreen(
-                            profileViewModel = profileViewModel,
-                            statsViewModel = statsViewModel,
-                            homeViewModel = homeViewModel,
+                            HomeScreen(
+                                profileViewModel = profileViewModel,
+                                statsViewModel = statsViewModel,
+                                homeViewModel = homeViewModel,
 
-                            onNavigateToBacheca = {
-                                // Questo cambia la destinazione della bottom bar simulando il tap
-                                currentDestination = AppDestinations.BADGE
-                            },
-                            onNavigateToStats = {
-                                currentDestination = AppDestinations.STATISTICHE
-                            },
-                            onActivityClick = { activity ->
-                                profileViewModel.selectActivityForDetails(activity)
-                                currentDestination = AppDestinations.BADGE
-                            }
-                        )
+                                onNavigateToBacheca = {
+                                    // Questo cambia la destinazione della bottom bar simulando il tap
+                                    currentDestination = AppDestinations.BADGE
+                                },
+                                onNavigateToStats = {
+                                    currentDestination = AppDestinations.STATISTICHE
+                                },
+                                onActivityClick = { activity ->
+                                    profileViewModel.selectActivityForDetails(activity)
+                                    currentDestination = AppDestinations.BADGE
+                                }
+                            )
+                        }
                     }
-                }
-                AppDestinations.BADGE -> {
-                    val profileViewModel: ProfileViewModel = viewModel()
-                    Box(modifier = Modifier.padding(innerPadding)) {
 
-                        BadgesMainScreen(viewModel = profileViewModel)
+                    AppDestinations.BADGE -> {
+                        val profileViewModel: ProfileViewModel = viewModel()
+                        Box(modifier = Modifier.padding(innerPadding)) {
+
+                            BadgesMainScreen(viewModel = profileViewModel)
+                        }
                     }
-                }
-                AppDestinations.STATISTICHE -> {
-                    // ViewModel inizializzato solo quando serve
-                    val statsViewModel: StatsViewModel = viewModel()
-                    Box(modifier = Modifier.padding(innerPadding)) {
-                        StatsScreen(viewModel = statsViewModel)
+
+                    AppDestinations.STATISTICHE -> {
+                        // ViewModel inizializzato solo quando serve
+                        val statsViewModel: StatsViewModel = viewModel()
+                        Box(modifier = Modifier.padding(innerPadding)) {
+                            StatsScreen(viewModel = statsViewModel)
+                        }
                     }
-                }
-                AppDestinations.PROFILE -> {
-                    // ViewModel inizializzato solo quando serve
-                    val profileViewModel: ProfileViewModel = viewModel()
-                    Box(modifier = Modifier.padding(innerPadding)) {
-                        ProfileScreen(viewModel = profileViewModel)
+
+                    AppDestinations.PROFILE -> {
+                        // ViewModel inizializzato solo quando serve
+                        val profileViewModel: ProfileViewModel = viewModel()
+                        Box(modifier = Modifier.padding(innerPadding)) {
+                            ProfileScreen(viewModel = profileViewModel)
+                        }
                     }
                 }
             }
-        }
     }
 }
 

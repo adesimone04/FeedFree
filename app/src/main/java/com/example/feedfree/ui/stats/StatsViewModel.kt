@@ -70,22 +70,27 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
     init {
         loadAndroidData()
     }
-
     private fun loadAndroidData() {
-        // 2. Usiamo viewModelScope.launch(Dispatchers.IO) per eseguire
-        // la lettura dei dati in background, senza bloccare l'interfaccia grafica
         viewModelScope.launch(Dispatchers.IO) {
-
-            // 3. Ora possiamo usare getApplication() come Context!
             val context = getApplication<Application>()
+
+            val calendar = Calendar.getInstance()
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            val startTime = calendar.timeInMillis
+            val endTime = System.currentTimeMillis()
+
+            val intent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
+            val launcherPackage = context.packageManager.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
 
             val usageStats = getTodayUsageStats(context)
             val installedApps = getInstalledApps(context)
 
             val usedAppsList = installedApps.mapNotNull { appInfo ->
                 val time = usageStats[appInfo.packageName]
-
-                if (time != null && time > 0) {
+                if (time != null && time > 0 && appInfo.packageName != launcherPackage) {
                     AppUsageItem(
                         appName = appInfo.appName,
                         packageName = appInfo.packageName,
@@ -97,41 +102,31 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }.sortedByDescending { it.usageTimeMillis }
 
-            // 1. Calcoliamo il tempo totale sommando tutti i valori in millisecondi
-            val totalTime = usedAppsList.sumOf { it.usageTimeMillis }
+            usedAppsList.forEach { appItem ->
+                val minutes = appItem.usageTimeMillis / 1000 / 60
+                android.util.Log.d("APP_SCREEN_TIME", "App: ${appItem.appName} - Tempo: $minutes minuti")
+            }
 
+            // ELENCO DELLE APP DI SISTEMA PURAMENTE STRUMENTALI DA ESCLUDERE DAL TOTALE
+            val ignoredPackages = listOf(
+                "com.android.settings",
+                "com.google.android.apps.maps",
+                "com.google.android.googlequicksearchbox"
+            )
 
-            // 3. Salviamo tutto nello stato. La UI reagirà automaticamente mostrandoli!
+            // SOMMA PULITA: Sommiamo tutte le app usate per più di 1 minuto, escludendo gli strumenti di sistema
+            val totalCleanTime = usedAppsList
+                .filter { it.usageTimeMillis > 60 * 1000 && !ignoredPackages.contains(it.packageName) }
+                .sumOf { it.usageTimeMillis }
+
+            // 2. Salviamo nello stato il tempo totale pulito e coerente con l'utilizzo reale
             _uiState.value = StatsUiState(
-                totalScreenTimeMillis = totalTime,
+                totalScreenTimeMillis = totalCleanTime,
                 usedApps = usedAppsList,
                 allInstalledApps = installedApps
             )
         }
     }
-
-    private fun getTodayUsageStats(context: Context): Map<String, Long> {
-        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        val startTime = calendar.timeInMillis
-        val endTime = System.currentTimeMillis()
-
-        val usageStatsMap = usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
-        val appUsageTimes = mutableMapOf<String, Long>()
-
-        for ((packageName, stats) in usageStatsMap) {
-            if (stats.totalTimeInForeground > 0) {
-                appUsageTimes[packageName] = stats.totalTimeInForeground
-            }
-        }
-        return appUsageTimes
-    }
-
     private fun getInstalledApps(context: Context): List<AppInfo> {
         val packageManager = context.packageManager
 
@@ -175,4 +170,88 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
             newMap
         }
     }
+
+    private fun getTrueScreenTime(context: Context, startTime: Long, endTime: Long): Long {
+        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val events = usageStatsManager.queryEvents(startTime, endTime)
+        val event = android.app.usage.UsageEvents.Event()
+
+        var totalScreenTime = 0L
+        var lastScreenOnTime = startTime
+        var isScreenOn = false
+
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            when (event.eventType) {
+                android.app.usage.UsageEvents.Event.SCREEN_INTERACTIVE -> {
+                    isScreenOn = true
+                    lastScreenOnTime = event.timeStamp
+                }
+                android.app.usage.UsageEvents.Event.SCREEN_NON_INTERACTIVE -> {
+                    if (isScreenOn) {
+                        totalScreenTime += (event.timeStamp - lastScreenOnTime)
+                        isScreenOn = false
+                    }
+                }
+            }
+        }
+
+        // Se lo schermo è attualmente acceso, aggiunge il tempo parziale fino a questo momento
+        if (isScreenOn) {
+            totalScreenTime += (System.currentTimeMillis() - lastScreenOnTime)
+        }
+
+        return totalScreenTime
+    }
+
+    private fun getTodayUsageStats(context: Context): Map<String, Long> {
+        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startTime = calendar.timeInMillis
+        val endTime = System.currentTimeMillis()
+
+        val events = usageStatsManager.queryEvents(startTime, endTime)
+        val event = android.app.usage.UsageEvents.Event()
+
+        // Mappa temporanea per tracciare quando un'app è andata in foreground
+        val appStartTimes = mutableMapOf<String, Long>()
+        val appUsageTimes = mutableMapOf<String, Long>()
+
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            val packageName = event.packageName
+
+            when (event.eventType) {
+                android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED,
+                android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> {
+                    appStartTimes[packageName] = event.timeStamp
+                }
+                android.app.usage.UsageEvents.Event.ACTIVITY_PAUSED,
+                android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> {
+                    val startTimeApp = appStartTimes[packageName]
+                    if (startTimeApp != null && event.timeStamp >= startTimeApp) {
+                        val duration = event.timeStamp - startTimeApp
+                        appUsageTimes[packageName] = (appUsageTimes[packageName] ?: 0L) + duration
+                        appStartTimes.remove(packageName)
+                    }
+                }
+            }
+        }
+
+        // Se un'app è attualmente aperta in primo piano, calcoliamo il tempo parziale fino ad adesso
+        for ((packageName, startTimeApp) in appStartTimes) {
+            if (startTimeApp >= startTime) {
+                val duration = System.currentTimeMillis() - startTimeApp
+                appUsageTimes[packageName] = (appUsageTimes[packageName] ?: 0L) + duration
+            }
+        }
+
+        return appUsageTimes
+    }
+
 }

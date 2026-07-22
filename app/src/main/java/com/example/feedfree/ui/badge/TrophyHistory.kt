@@ -41,12 +41,22 @@ fun TrophyHistoryScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(text = "La mia Bacheca", fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) { Icon(imageVector = Icons.Default.ArrowBackIosNew, contentDescription = "Indietro", tint = DarkGrayText) }
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "La mia Bacheca",
+                        fontWeight = FontWeight.Bold
+                    )
                 },
-
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBackIosNew,
+                            contentDescription = "Indietro",
+                            tint = DarkGrayText
+                        )
+                    }
+                }
             )
         },
 
@@ -87,11 +97,10 @@ fun TrophyHistoryScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false)
                             .padding(bottom = 12.dp)
-                            .clip(RoundedCornerShape(24.dp))
                             .clickable { onActivityClick(activity) },
                         shape = RoundedCornerShape(24.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
                     ) {
                         Row(
@@ -122,10 +131,9 @@ fun EarnedTrophiesSummaryCard(completedActivities: List<CustomActivity>) {
     val bronzeCount = completedActivities.count { it.tier == Tier.BRONZE }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp), clip = false),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(containerColor = LightGreenBg)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
